@@ -14,6 +14,7 @@ type Plugin interface {
 type CliConnection interface {
 	CliCommandWithoutTerminalOutput(args ...string) ([]string, error)
 	CliCommand(args ...string) ([]string, error)
+	GetCurrentOrg() string
 }
 
 type VersionType struct {

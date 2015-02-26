@@ -20,6 +20,8 @@ type Test1 struct {
 
 func (c *Test1) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "test_1_cmd1" {
+		fmt.Println("test_1_cmd1")
+		fmt.Println("Current Org: ", cliConnection.GetCurrentOrg())
 		theFirstCmd()
 	} else if args[0] == "test_1_cmd2" {
 		theSecondCmd()

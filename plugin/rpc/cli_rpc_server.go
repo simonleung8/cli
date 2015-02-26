@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 	"github.com/codegangsta/cli"
@@ -23,15 +24,17 @@ type CliRpcCmd struct {
 	coreCommandRunner    *cli.App
 	outputCapture        terminal.OutputCapture
 	terminalOutputSwitch terminal.TerminalOutputSwitch
+	cliConfig            core_config.Repository
 }
 
-func NewRpcService(commandRunner *cli.App, outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch) (*CliRpcService, error) {
+func NewRpcService(commandRunner *cli.App, outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch, cliConfig core_config.Repository) (*CliRpcService, error) {
 	rpcService := &CliRpcService{
 		RpcCmd: &CliRpcCmd{
 			PluginMetadata:       &plugin.PluginMetadata{},
 			coreCommandRunner:    commandRunner,
 			outputCapture:        outputCapture,
 			terminalOutputSwitch: terminalOutputSwitch,
+			cliConfig:            cliConfig,
 		},
 	}
 
@@ -117,3 +120,16 @@ func (cmd *CliRpcCmd) GetOutputAndReset(args bool, retVal *[]string) error {
 	*retVal = cmd.outputCapture.GetOutputAndReset()
 	return nil
 }
+
+func (cmd *CliRpcCmd) GetCurrentOrg(args bool, retVal *string) error {
+	*retVal = cmd.cliConfig.OrganizationFields().Name
+	return nil
+}
+
+// func (cmd *CliRpcCmd) GetCurrentApps(args bool, retVal []string) error {
+// 	var result []string
+// 	c := cmd.coreCommandRunner.Command("apps")
+// 	c.SetPluginResult(&result)
+// 	err := cmd.coreCommandRunner.Run([]string{"apps"})
+// 	return nil
+// }
