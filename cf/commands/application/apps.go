@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	. "github.com/cloudfoundry/cli/cf/i18n"
+	"github.com/cloudfoundry/cli/plugin"
 
 	"github.com/cloudfoundry/cli/cf/api"
 	"github.com/cloudfoundry/cli/cf/command_metadata"
@@ -15,16 +16,20 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+var pluginResult *[]string
+
 type ListApps struct {
 	ui             terminal.UI
 	config         core_config.Reader
 	appSummaryRepo api.AppSummaryRepository
+	pluginResource plugin.Resource
 }
 
-func NewListApps(ui terminal.UI, config core_config.Reader, appSummaryRepo api.AppSummaryRepository) (cmd ListApps) {
+func NewListApps(ui terminal.UI, config core_config.Reader, appSummaryRepo api.AppSummaryRepository, pluginResource plugin.Resource) (cmd ListApps) {
 	cmd.ui = ui
 	cmd.config = config
 	cmd.appSummaryRepo = appSummaryRepo
+	cmd.pluginResource = pluginResource
 	return
 }
 
@@ -77,6 +82,8 @@ func (cmd ListApps) Run(c *cli.Context) {
 		for _, route := range application.Routes {
 			urls = append(urls, route.URL())
 		}
+
+		cmd.pluginResource.SetApp(application.Name)
 
 		table.Add(
 			application.Name,

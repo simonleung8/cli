@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/requirements"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/cf/trace"
+	"github.com/cloudfoundry/cli/plugin"
 	"github.com/cloudfoundry/cli/plugin/rpc"
 	"github.com/codegangsta/cli"
 )
@@ -84,9 +85,11 @@ func main() {
 	defer handlePanics(deps.teePrinter)
 	defer deps.configRepo.Close()
 
-	rpcService := newCliRpcServer(deps.teePrinter, deps.teePrinter)
+	pluginResource := plugin.NewResource()
 
-	cmdFactory := command_factory.NewFactory(deps.termUI, deps.configRepo, deps.manifestRepo, deps.apiRepoLocator, deps.pluginConfig, rpcService)
+	rpcService := newCliRpcServer(deps.teePrinter, deps.teePrinter, pluginResource)
+
+	cmdFactory := command_factory.NewFactory(deps.termUI, deps.configRepo, deps.manifestRepo, deps.apiRepoLocator, deps.pluginConfig, rpcService, pluginResource)
 	requirementsFactory := requirements.NewFactory(deps.termUI, deps.configRepo, deps.apiRepoLocator)
 	cmdRunner := command_runner.NewRunner(cmdFactory, requirementsFactory, deps.termUI)
 	pluginsConfig := plugin_config.NewPluginConfig(func(err error) { panic(err) })
@@ -281,8 +284,8 @@ func requestHelp(args []string) bool {
 	return false
 }
 
-func newCliRpcServer(outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch) *rpc.CliRpcService {
-	cliServer, err := rpc.NewRpcService(nil, outputCapture, terminalOutputSwitch, deps.configRepo)
+func newCliRpcServer(outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch, resource plugin.Resource) *rpc.CliRpcService {
+	cliServer, err := rpc.NewRpcService(nil, outputCapture, terminalOutputSwitch, deps.configRepo, resource)
 	if err != nil {
 		fmt.Println("Error initializing RPC service: ", err)
 		os.Exit(1)

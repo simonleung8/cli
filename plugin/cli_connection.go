@@ -61,6 +61,19 @@ func (cliConnection *cliConnection) GetCurrentOrg() string {
 	return result
 }
 
+func (cliConnection *cliConnection) GetApps() []Apps {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return nil
+	}
+
+	var result []Apps
+
+	cliConnection.callCliCommand(true, "apps")
+	err = client.Call("CliRpcCmd.GetApps", true, &result)
+	return result
+}
+
 func (cliConnection *cliConnection) callCliCommand(silently bool, args ...string) ([]string, error) {
 	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
 	if err != nil {

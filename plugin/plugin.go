@@ -15,6 +15,7 @@ type CliConnection interface {
 	CliCommandWithoutTerminalOutput(args ...string) ([]string, error)
 	CliCommand(args ...string) ([]string, error)
 	GetCurrentOrg() string
+	GetApps() []Apps
 }
 
 type VersionType struct {

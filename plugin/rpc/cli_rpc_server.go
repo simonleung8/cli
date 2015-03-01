@@ -25,9 +25,10 @@ type CliRpcCmd struct {
 	outputCapture        terminal.OutputCapture
 	terminalOutputSwitch terminal.TerminalOutputSwitch
 	cliConfig            core_config.Repository
+	pluginResource       plugin.Resource
 }
 
-func NewRpcService(commandRunner *cli.App, outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch, cliConfig core_config.Repository) (*CliRpcService, error) {
+func NewRpcService(commandRunner *cli.App, outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch, cliConfig core_config.Repository, pluginResource plugin.Resource) (*CliRpcService, error) {
 	rpcService := &CliRpcService{
 		RpcCmd: &CliRpcCmd{
 			PluginMetadata:       &plugin.PluginMetadata{},
@@ -35,6 +36,7 @@ func NewRpcService(commandRunner *cli.App, outputCapture terminal.OutputCapture,
 			outputCapture:        outputCapture,
 			terminalOutputSwitch: terminalOutputSwitch,
 			cliConfig:            cliConfig,
+			pluginResource:       pluginResource,
 		},
 	}
 
@@ -126,10 +128,7 @@ func (cmd *CliRpcCmd) GetCurrentOrg(args bool, retVal *string) error {
 	return nil
 }
 
-// func (cmd *CliRpcCmd) GetCurrentApps(args bool, retVal []string) error {
-// 	var result []string
-// 	c := cmd.coreCommandRunner.Command("apps")
-// 	c.SetPluginResult(&result)
-// 	err := cmd.coreCommandRunner.Run([]string{"apps"})
-// 	return nil
-// }
+func (cmd *CliRpcCmd) GetApps(args bool, retVal *[]plugin.Apps) error {
+	*retVal = cmd.pluginResource.GetApps()
+	return nil
+}
