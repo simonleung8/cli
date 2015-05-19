@@ -54,6 +54,10 @@ var _ = Describe("factory", func() {
 				return nil
 			}
 
+			if info.Name() == "api.go" {
+				return nil
+			}
+
 			for _, suffix := range suffixesToIgnore {
 				if strings.HasSuffix(path, suffix) {
 					return nil
