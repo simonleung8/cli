@@ -15,6 +15,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/command_runner"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/cf/configuration/plugin_config"
+	"github.com/cloudfoundry/cli/cf/help"
 	. "github.com/cloudfoundry/cli/cf/i18n"
 	"github.com/cloudfoundry/cli/cf/i18n/detection"
 	"github.com/cloudfoundry/cli/cf/manifest"
@@ -50,6 +51,12 @@ func main() {
 	defer deps.Config.Close()
 
 	//////////////// non-codegangsta path  ///////////////////////
+	if len(os.Args) == 1 {
+		fmt.Println("~~~~~~~~~~~~~~~~~~~~~ help ~~~~~~~~~~~~~")
+		help.ShowHelp()
+		os.Exit(0)
+	}
+
 	if len(os.Args) > 1 {
 		cmd := os.Args[1]
 

@@ -28,12 +28,12 @@ func NewApp(cmdRunner command_runner.Runner, metadatas ...command_metadata.Comma
 			if len(args) > 0 {
 				cli.ShowCommandHelp(c, args[0])
 			} else {
-				showAppHelp(appHelpTemplate(), c.App)
+				showAppHelp(AppHelpTemplate(), c.App)
 			}
 		},
 	}
 
-	cli.AppHelpTemplate = appHelpTemplate()
+	cli.AppHelpTemplate = AppHelpTemplate()
 	cli.HelpPrinter = ShowHelp
 
 	trace.Logger.Printf("\n%s\n%s\n\n", terminal.HeaderColor(T("VERSION:")), cf.Version)
@@ -87,7 +87,7 @@ func Usage() string {
 	return T("A command line tool to interact with Cloud Foundry")
 }
 
-func appHelpTemplate() string {
+func AppHelpTemplate() string {
 	return `{{.Title "` + T("NAME:") + `"}}
    {{.Name}} - {{.Usage}}
 

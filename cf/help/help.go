@@ -1,28 +1,32 @@
-package app
+package help
 
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 	"text/tabwriter"
 	"text/template"
+	"time"
 	"unicode/utf8"
 
+	"github.com/cloudfoundry/cli/cf"
 	"github.com/cloudfoundry/cli/cf/command_registry"
 	"github.com/cloudfoundry/cli/cf/configuration/plugin_config"
 	. "github.com/cloudfoundry/cli/cf/i18n"
 	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/codegangsta/cli"
 )
+
+type appPresenter struct {
+	Name     string
+	Usage    string
+	Version  string
+	Compiled time.Time
+	Commands []groupedCommands
+}
 
 type groupedCommands struct {
 	Name             string
 	CommandSubGroups [][]cmdPresenter
-}
-
-func (c groupedCommands) SubTitle(name string) string {
-	return terminal.HeaderColor(name + ":")
 }
 
 type cmdPresenter struct {
@@ -30,35 +34,27 @@ type cmdPresenter struct {
 	Description string
 }
 
-func presentCmdName(cmd cli.Command) (name string) {
-	name = cmd.Name
-	if cmd.ShortName != "" {
-		name = name + ", " + cmd.ShortName
+func ShowHelp() {
+	translatedTemplatedHelp := T(strings.Replace(getHelpTemplate(), "{{", "[[", -1))
+	translatedTemplatedHelp = strings.Replace(translatedTemplatedHelp, "[[", "{{", -1)
+
+	showAppHelp(translatedTemplatedHelp)
+}
+
+func showAppHelp(helpTemplate string) {
+	presenter := newAppPresenter()
+	fmt.Println("presenter", presenter.Name, presenter.Usage, len(presenter.Commands))
+	w := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', 0)
+	t := template.Must(template.New("help").Parse(helpTemplate))
+	err := t.Execute(w, presenter)
+	if err != nil {
+		fmt.Println("error", err)
 	}
-	return
+	w.Flush()
 }
 
-type appPresenter struct {
-	cli.App
-	Commands []groupedCommands
-}
-
-func (p appPresenter) Title(name string) string {
-	return terminal.HeaderColor(name)
-}
-
-func newAppPresenter(app *cli.App) (presenter appPresenter) {
+func newAppPresenter() (presenter appPresenter) {
 	maxNameLen := command_registry.Commands.MaxCommandNameLength()
-
-	presentCommand := func(commandName string) (presenter cmdPresenter) {
-		return
-		cmd := app.Command(commandName)
-		presenter.Name = presentCmdName(*cmd)
-		padding := strings.Repeat(" ", maxNameLen-utf8.RuneCountInString(presenter.Name))
-		presenter.Name = presenter.Name + padding
-		presenter.Description = cmd.Description
-		return
-	}
 
 	presentNonCodegangstaCommand := func(commandName string) (presenter cmdPresenter) {
 		cmd := command_registry.Commands.FindCommand(commandName)
@@ -96,11 +92,16 @@ func newAppPresenter(app *cli.App) (presenter appPresenter) {
 
 		return presenters
 	}
-	presenter.Name = app.Name
-	presenter.Flags = app.Flags
-	presenter.Usage = app.Usage
-	presenter.Version = app.Version
-	presenter.Compiled = app.Compiled
+
+	presenter.Name = os.Args[0]
+	presenter.Usage = T("A command line tool to interact with Cloud Foundry")
+	presenter.Version = cf.Version + "-" + cf.BuiltOnDate
+	compiledAtTime, err := time.Parse("2006-01-02T03:04:05+00:00", cf.BuiltOnDate)
+	if err == nil {
+		presenter.Compiled = compiledAtTime
+	} else {
+		presenter.Compiled = time.Now()
+	}
 	presenter.Commands = []groupedCommands{
 		{
 			Name: T("GETTING STARTED"),
@@ -131,7 +132,7 @@ func newAppPresenter(app *cli.App) (presenter appPresenter) {
 					presentNonCodegangstaCommand("stop"),
 					presentNonCodegangstaCommand("restart"),
 					presentNonCodegangstaCommand("restage"),
-					presentCommand("restart-app-instance"),
+					// presentNonCodegangstaCommand("restart-app-instance"),
 				}, {
 					presentNonCodegangstaCommand("events"),
 					presentNonCodegangstaCommand("files"),
@@ -237,7 +238,7 @@ func newAppPresenter(app *cli.App) (presenter appPresenter) {
 			Name: T("USER ADMIN"),
 			CommandSubGroups: [][]cmdPresenter{
 				{
-					presentCommand("create-user"),
+					// presentNonCodegangstaCommand("create-user"),
 					presentNonCodegangstaCommand("delete-user"),
 				}, {
 					presentNonCodegangstaCommand("org-users"),
@@ -383,38 +384,10 @@ func newAppPresenter(app *cli.App) (presenter appPresenter) {
 	return
 }
 
-func ShowHelp(helpTemplate string, thingToPrint interface{}) {
-	translatedTemplatedHelp := T(strings.Replace(helpTemplate, "{{", "[[", -1))
-	translatedTemplatedHelp = strings.Replace(translatedTemplatedHelp, "[[", "{{", -1)
-
-	switch thing := thingToPrint.(type) {
-	case *cli.App:
-		showAppHelp(translatedTemplatedHelp, thing)
-	case cli.Command:
-		showCommandHelp(translatedTemplatedHelp, thing)
-	default:
-		panic(fmt.Sprintf("Help printer has received something that is neither app nor command! The beast (%s) looks like this: %s", reflect.TypeOf(thing), thing))
-	}
+func (p appPresenter) Title(name string) string {
+	return terminal.HeaderColor(name)
 }
 
-func ShowHelpNonCodegangsta(helpTemplate string) {
-	translatedTemplatedHelp := T(strings.Replace(helpTemplate, "{{", "[[", -1))
-	translatedTemplatedHelp = strings.Replace(translatedTemplatedHelp, "[[", "{{", -1)
-
-	showAppHelp(translatedTemplatedHelp, &cli.App{})
-}
-
-var CodeGangstaHelpPrinter = cli.HelpPrinter
-
-func showCommandHelp(helpTemplate string, commandToPrint cli.Command) {
-	CodeGangstaHelpPrinter(helpTemplate, commandToPrint)
-}
-
-func showAppHelp(helpTemplate string, appToPrint *cli.App) {
-	presenter := newAppPresenter(appToPrint)
-
-	w := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', 0)
-	t := template.Must(template.New("help").Parse(helpTemplate))
-	t.Execute(w, presenter)
-	w.Flush()
+func (c groupedCommands) SubTitle(name string) string {
+	return terminal.HeaderColor(name + ":")
 }
